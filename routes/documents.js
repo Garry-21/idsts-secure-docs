@@ -174,7 +174,7 @@ router.get('/:id/view', requireAuth, (req, res) => {
     // Check access (view or download allowed)
     if (req.user.role !== 'admin' && doc.owner_id !== req.user.id) {
       const access = db.prepare(
-        'SELECT * FROM document_access WHERE document_id = ? AND user_id = ? AND permission IN ("view", "download")'
+        'SELECT * FROM document_access WHERE document_id = ? AND user_id = ? AND permission IN (\'view\', \'download\')'
       ).get(doc.id, req.user.id);
 
       if (!access) {
