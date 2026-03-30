@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: idsts-secure-docs
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        value: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    disk:
+      name: idsts-data
+      mountPath: /data
+      sizeGB: 1

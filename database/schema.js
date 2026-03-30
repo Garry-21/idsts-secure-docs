@@ -5,7 +5,9 @@ const { v4: uuidv4 } = require('uuid');
 
 const DB_PATH = process.env.VERCEL 
   ? path.join('/tmp', 'idsts.db')
-  : path.join(__dirname, 'idsts.db');
+  : process.env.DATA_DIR
+    ? path.join(process.env.DATA_DIR, 'idsts.db')
+    : path.join(__dirname, 'idsts.db');
 
 let db;
 
