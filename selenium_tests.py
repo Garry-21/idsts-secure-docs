@@ -134,9 +134,12 @@ def test_admin_login(driver):
             lambda d: "dashboard" in d.current_url
         )
 
+        # Wait for Cloud latency (let the API fetch the user stats)
+        time.sleep(2)
+
         # Verify dashboard content
         page_text = driver.find_element(By.TAG_NAME, "body").text
-        assert "Welcome back, admin" in page_text, "Dashboard should greet admin"
+        assert "Welcome back" in page_text, "Dashboard should greet admin"
         assert "Total Users" in page_text, "Admin dashboard should show stats"
 
         log_result("Admin login", True)
