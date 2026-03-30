@@ -86,15 +86,22 @@ async function handleRegister(e) {
 
   try {
     const data = await api.post('/auth/register', { username, email, password });
-    showToast('Registration successful! You can now login.', 'success');
+    
+    // Auto-login locally
+    if (data.token) {
+      setToken(data.token);
+      setUser({ id: data.userId, username, email, role: 'user' });
+    }
+
+    showToast('Registration successful!', 'success');
 
     // Show OTP setup if available
     if (data.otp && data.otp.qrCode) {
       showOTPSetupDialog(data.otp);
     } else {
       setTimeout(() => {
-        window.location.href = '/index.html';
-      }, 1500);
+        window.location.href = '/dashboard.html';
+      }, 1000);
     }
   } catch (err) {
     showToast(err.message, 'error');
@@ -163,22 +170,46 @@ function showOTPSetupDialog(otpData) {
       <div style="text-align: center; margin-bottom: 16px;">
         <img src="${otpData.qrCode}" alt="QR Code" style="max-width: 200px; border-radius: 8px;">
       </div>
-      <div class="form-group">
-        <label class="form-label">Manual Entry Key</label>
-        <input type="text" class="form-input" value="${otpData.secret}" readonly
-               style="font-family: monospace; font-size: 13px;"
-               onclick="this.select()">
+      <div class="form-group" style="text-align: center;">
+        <input type="text" id="setup-otp-code" class="form-input" placeholder="000000"
+               maxlength="6" pattern="[0-9]*" autofocus
+               style="text-align: center; font-size: 24px; letter-spacing: 8px; width: 60%; margin: 0 auto;">
       </div>
       <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 16px;">
-        You can enable 2FA later from your profile. For now, you can login without it.
+        Or enter Manual Entry Key: <span style="font-family: monospace;">${otpData.secret}</span>
       </p>
       <div class="modal-actions">
-        <button class="btn btn-primary" onclick="this.closest('.modal-overlay').remove(); window.location.href='/index.html'">
-          Continue to Login
+        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove(); window.location.href='/dashboard.html'">
+          Skip for Now
+        </button>
+        <button class="btn btn-primary" id="btn-enable-otp">
+          Verify & Enable
         </button>
       </div>
     </div>
   `;
 
   document.body.appendChild(overlay);
+
+  document.getElementById('btn-enable-otp').addEventListener('click', async (e) => {
+    const btn = e.target;
+    const otpCode = document.getElementById('setup-otp-code').value.trim();
+    if (!otpCode || otpCode.length !== 6) {
+      showToast('Enter a valid 6-digit code', 'warning');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = 'Verifying...';
+
+    try {
+      const resp = await api.post('/auth/enable-otp', { otpCode });
+      showToast(resp.message, 'success');
+      setTimeout(() => window.location.href = '/dashboard.html', 1000);
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+      btn.innerText = 'Verify & Enable';
+    }
+  });
 }

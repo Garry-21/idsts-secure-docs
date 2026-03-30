@@ -61,9 +61,18 @@ router.post('/register', async (req, res) => {
       `).run(uuidv4(), admin.id, 'New User Registered', `User "${username}" has registered.`);
     });
 
+    // Automatically create a session so the user is natively logged in
+    const token = generateToken(userId, 'user');
+    const sessionId = uuidv4();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    db.prepare('INSERT INTO sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)')
+      .run(sessionId, userId, token, expiresAt);
+
     res.status(201).json({
       message: 'Registration successful',
       userId,
+      token,
       otp: {
         secret,
         qrCode: qrCodeDataUrl,
@@ -237,15 +246,29 @@ router.post('/enable-otp', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Auth required' });
 
+    const { otpCode } = req.body;
+    if (!otpCode) return res.status(400).json({ error: 'OTP code is required to enable 2FA' });
+
     const jwt = require('jsonwebtoken');
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'idsts_super_secret_jwt_key_2024_secure');
 
     const db = getDb();
+    const user = db.prepare('SELECT otp_secret FROM users WHERE id = ?').get(decoded.userId);
+
+    if (!user || !user.otp_secret) {
+      return res.status(400).json({ error: 'OTP is not configured for this account' });
+    }
+
+    if (!verifyOTP(otpCode, user.otp_secret)) {
+      return res.status(401).json({ error: 'Invalid verification code' });
+    }
+
     db.prepare('UPDATE users SET otp_enabled = 1 WHERE id = ?').run(decoded.userId);
 
-    res.json({ message: 'OTP enabled successfully' });
+    res.json({ message: 'OTP successfully verified and enabled!' });
   } catch (err) {
+    console.error('Enable OTP Error:', err);
     res.status(500).json({ error: 'Failed to enable OTP' });
   }
 });

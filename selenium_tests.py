@@ -32,7 +32,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
-BASE_URL = "https://idsts-secure-docs--GarvitSingla.replit.app"
+BASE_URL = "http://localhost:3000"
 
 # ── Test Results Tracker ──
 results = []
@@ -168,10 +168,10 @@ def test_user_registration(driver):
 
         # Should show OTP setup modal or redirect
         page_text = driver.find_element(By.TAG_NAME, "body").text
-        if "Two-Factor" in page_text or "Continue to Login" in page_text:
+        if "Two-Factor" in page_text or "Skip for Now" in page_text:
             # OTP setup shown — dismiss it
             try:
-                continue_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Continue to Login')]")
+                continue_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Skip for Now')]")
                 continue_btn.click()
                 time.sleep(1)
             except:
