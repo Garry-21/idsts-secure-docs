@@ -160,6 +160,52 @@ router.get('/:id/download', requireAuth, (req, res) => {
 });
 
 /**
+ * GET /api/documents/:id/view — Decrypt and view a file inline
+ */
+router.get('/:id/view', requireAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const doc = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id);
+
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Check access (view or download allowed)
+    if (req.user.role !== 'admin' && doc.owner_id !== req.user.id) {
+      const access = db.prepare(
+        'SELECT * FROM document_access WHERE document_id = ? AND user_id = ? AND permission IN ("view", "download")'
+      ).get(doc.id, req.user.id);
+
+      if (!access) {
+        createAuditEntry(req.user.id, req.user.username, 'UNAUTHORIZED_VIEW_ATTEMPT', 'documents', doc.id,
+          { filename: doc.original_name }, req.ip);
+        return res.status(403).json({ error: 'No view access to this document' });
+      }
+    }
+
+    // Read and decrypt the file
+    const filePath = path.join(UPLOADS_DIR, doc.filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on disk' });
+    }
+
+    const encryptedData = fs.readFileSync(filePath);
+    const decryptedData = decrypt(encryptedData, doc.encryption_iv);
+
+    createAuditEntry(req.user.id, req.user.username, 'DOCUMENT_VIEWED', 'documents', doc.id,
+      { filename: doc.original_name }, req.ip);
+
+    res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${doc.original_name}"`);
+    res.send(decryptedData);
+  } catch (err) {
+    console.error('View error:', err);
+    res.status(500).json({ error: 'View failed' });
+  }
+});
+
+/**
  * POST /api/documents/:id/share — Share document with another user
  */
 router.post('/:id/share', requireAuth, (req, res) => {

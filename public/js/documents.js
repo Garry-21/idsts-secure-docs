@@ -146,9 +146,14 @@ function renderDocuments(docs) {
           ${doc.owner_name ? `• by ${doc.owner_name}` : ''}
         </div>
         <div class="doc-actions">
+          <button class="btn btn-sm btn-secondary" onclick="viewDoc('${doc.id}')" title="View">
+            👀 View
+          </button>
+          ${isOwner || doc.permission === 'download' ? `
           <button class="btn btn-sm btn-secondary" onclick="downloadDoc('${doc.id}', '${doc.original_name}')" title="Download">
             📥 Download
           </button>
+          ` : ''}
           ${isOwner ? `
             <button class="btn btn-sm btn-secondary" onclick="showShareModal('${doc.id}')" title="Share">
               🔗 Share
@@ -163,6 +168,30 @@ function renderDocuments(docs) {
       </div>
     `;
   }).join('');
+}
+
+async function viewDoc(id) {
+  try {
+    showToast('Decrypting for viewing...', 'info');
+    const token = getToken();
+    const response = await fetch(`/api/documents/${id}/view`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'View failed');
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    
+    // Clean up url gracefully after new tab opens
+    setTimeout(() => URL.revokeObjectURL(url), 60000); 
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 function filterDocuments() {
