@@ -48,15 +48,6 @@ async function apiRequest(endpoint, options = {}) {
       headers,
     });
 
-    // Handle 401 — redirect to login
-    if (response.status === 401) {
-      clearToken();
-      if (!window.location.pathname.includes('index.html') && window.location.pathname !== '/') {
-        window.location.href = '/index.html';
-      }
-      throw new Error('Session expired. Please login again.');
-    }
-
     // Handle non-JSON responses (like CSV downloads)
     const contentType = response.headers.get('content-type');
     if (contentType && !contentType.includes('application/json')) {
@@ -67,6 +58,13 @@ async function apiRequest(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
+      // Handle 401 specifically (clear token and optionally redirect)
+      if (response.status === 401) {
+        clearToken();
+        if (!window.location.pathname.includes('index.html') && window.location.pathname !== '/') {
+          window.location.href = '/index.html';
+        }
+      }
       throw new Error(data.error || 'Request failed');
     }
 
