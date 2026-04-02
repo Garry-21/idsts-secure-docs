@@ -136,7 +136,7 @@ async function loadReports() {
         </td>
         <td>${u.doc_count}</td>
         <td style="width: 200px;">
-          <div style="background: var(--bg-glass); border-radius: 4px; height: 8px; overflow: hidden;">
+          <div style="background: var(--bg-input); border-radius: 4px; height: 8px; overflow: hidden;">
             <div style="height: 100%; width: ${(u.doc_count / maxDocs) * 100}%; background: var(--gradient-primary); border-radius: 4px; transition: width 0.5s ease;"></div>
           </div>
         </td>

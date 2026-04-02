@@ -235,7 +235,7 @@ function buildSidebar(activePage) {
             <div class="name">${user.username}</div>
             <div class="role">${user.role}</div>
           </div>
-          <button class="btn btn-ghost btn-icon" onclick="logout()" title="Logout" id="btn-logout">⏻</button>
+          <button class="btn-logout" onclick="logout()" title="Logout" id="btn-logout">🚪</button>
         </div>
       </div>
     </div>

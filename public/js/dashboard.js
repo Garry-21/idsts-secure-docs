@@ -138,7 +138,7 @@ async function loadDashboard(user) {
         if (auditData.logs && auditData.logs.length > 0) {
           activityEl.innerHTML = auditData.logs.map(log => `
             <div style="padding: 10px 0; border-bottom: 1px solid var(--border-subtle); display: flex; gap: 12px; align-items: center;">
-              <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-glass); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-input); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
                 ${getActionIcon(log.action)}
               </div>
               <div style="flex: 1; min-width: 0;">
